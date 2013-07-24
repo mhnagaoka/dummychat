@@ -16,6 +16,7 @@ var url = require('url')
 
 // Configurações de Cookie e Session do Express
 app.configure(function(){
+  app.use(express.logger());
   app.set('view engine', 'ejs');
   app.use(cookie);
   app.use(session);
