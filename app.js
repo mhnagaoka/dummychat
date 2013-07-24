@@ -14,6 +14,8 @@ var url = require('url')
                              , store: store})
   , _ = require('underscore');
 
+var port = process.env.PORT || 3000;
+
 // Configurações de Cookie e Session do Express
 app.configure(function(){
   app.use(express.logger());
@@ -26,8 +28,8 @@ app.get('/chat/:room/:user', function(req, res){
   res.render('index');
 });
 
-server.listen(3000, function(){
-  console.log("Express e Socket.IO no ar.");
+server.listen(port, function(){
+  console.log("Express e Socket.IO no ar. Porta " + port);
 });
 
 // Configurações do Socket.IO
