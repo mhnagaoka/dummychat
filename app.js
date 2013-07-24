@@ -22,6 +22,7 @@ app.configure(function(){
   app.set('view engine', 'ejs');
   app.use(cookie);
   app.use(session);
+  app.use(express.static(__dirname + '/public'));
 });
 
 app.get('/chat/:room/:user', function(req, res){
