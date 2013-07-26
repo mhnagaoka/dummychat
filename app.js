@@ -35,7 +35,7 @@ app.configure('production', function () {
   googleCredentials.client_id = '971716775291.apps.googleusercontent.com';
   googleCredentials.client_secret = 'xilkri5GtRzbQqaUl7aYoTRc';
   googleCredentials.redirect_uri = 'http://dummychat.herokuapp.com/oauth2callback';
-  delete proxy;
+  proxy = null;
 });
 
 app.get('/login/google/:room', function (req, res) {
