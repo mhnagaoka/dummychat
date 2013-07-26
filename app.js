@@ -51,7 +51,7 @@ app.get('/login/google/:room', function (req, res) {
       //scope: 'openid email',
       //scope: 'https://www.googleapis.com/auth/plus.login',
       scope: 'https://www.googleapis.com/auth/plus.me',
-      redirect_uri: 'http://localhost:3000/oauth2callback',
+      redirect_uri: googleCredentials.redirect_uri,
       state: nonce + '@' + req.params.room,
       prompt: 'select_account'
     }
