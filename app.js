@@ -77,10 +77,11 @@ app.get('/oauth2callback', function (req, res) {
     if (proxy) {
       accessTokenObj.proxy = proxy;
     }
+    console.log(JSON.stringify(accessTokenObj));
     request.post(accessTokenObj, function (error, response, body) {
-      //console.log('code error:' + error);
-      //console.log('code response:' + response);
-      //console.log('code body:' + body);
+      console.log('code error:' + error);
+      console.log('code response:' + response);
+      console.log('code body:' + body);
       var bodyObj = JSON.parse(body);
       var meObj = {
         url: 'https://www.googleapis.com/plus/v1/people/me',
