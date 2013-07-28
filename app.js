@@ -13,10 +13,12 @@ var url = require('url')
                              , key: KEY
                              , store: store})
   , _ = require('underscore')
-  , request = require('request');
+  , request = require('request')
+  , querystring = require('querystring');
 
 var port = process.env.PORT || 3000;
 var googleCredentials = {};
+var fbCredentials = {};
 var proxy;
 
 // Configurações de Cookie e Session do Express
@@ -29,19 +31,22 @@ app.configure(function () {
   googleCredentials.client_id = '971716775291-5u2igpq9var1nkq2ssutl2kk9thp25p0.apps.googleusercontent.com';
   googleCredentials.client_secret = 'alRwAgjQ6yKR-0F3e8sECt8L';
   googleCredentials.redirect_uri = 'http://localhost:3000/oauth2callback';
-  proxy = 'http://proxy.ns2online.com.br:8080';
+  fbCredentials.client_id = '321497631319507';
+  fbCredentials.client_secret = '3842dc9f9b04ece5fa2dbe1af32a1c9b';
+  fbCredentials.redirect_uri = 'http://localhost:3000/fboauth2callback';
+  //proxy = 'http://proxy.ns2online.com.br:8080';
 });
 app.configure('production', function () {
   googleCredentials.client_id = '971716775291.apps.googleusercontent.com';
   googleCredentials.client_secret = 'xilkri5GtRzbQqaUl7aYoTRc';
   googleCredentials.redirect_uri = 'http://dummychat.herokuapp.com/oauth2callback';
-    io.configure(function () { 
+  fbCredentials.redirect_uri = 'http://dummychat.herokuapp.com/fboauth2callback';
+  io.configure(function () { 
     io.set("transports", ["xhr-polling"]); 
     io.set("polling duration", 10); 
   });
   proxy = null;
 });
-
 app.get('/login/google/:room', function (req, res) {
   var nonce = Math.floor(Math.random() * 90000) + 10000;
   req.session.nonce = nonce;
@@ -58,6 +63,22 @@ app.get('/login/google/:room', function (req, res) {
       redirect_uri: googleCredentials.redirect_uri,
       state: nonce + '@' + req.params.room,
       prompt: 'select_account'
+    }
+  };
+  res.redirect(url.format(urlObj));
+});
+app.get('/login/fb/:room', function (req, res) {
+  var nonce = Math.floor(Math.random() * 90000) + 10000;
+  req.session.nonce = nonce;
+  var urlObj = {
+    protocol: 'https',
+    host: 'www.facebook.com',
+    pathname: '/dialog/oauth',
+    query: {
+      client_id: fbCredentials.client_id,
+      response_type: 'code',
+      redirect_uri: fbCredentials.redirect_uri,
+      state: nonce + '@' + req.params.room,
     }
   };
   res.redirect(url.format(urlObj));
@@ -101,6 +122,51 @@ app.get('/oauth2callback', function (req, res) {
         //console.log('people/me body:' + body);
         var bodyObj = JSON.parse(body);
         req.session.displayName = bodyObj.displayName;
+        res.redirect('/chat/' + state[1]);
+      });
+    });
+  } else {
+    res.end(); // TODO: wrong nonce, send appropriate error code
+  }
+});
+app.get('/fboauth2callback', function (req, res) {
+  var urlObj = url.parse(req.url, true);
+  var state = urlObj.query.state.split('@');
+  if (req.session.nonce == state[0]) {
+  	console.log('nonce ok.');
+    delete req.session.nonce;
+    var accessTokenObj = {
+      url: 'https://graph.facebook.com/oauth/access_token',
+      qs: {
+        code: urlObj.query.code,
+        client_id: fbCredentials.client_id,
+        client_secret: fbCredentials.client_secret ,
+        redirect_uri: fbCredentials.redirect_uri
+      }
+    };
+    if (proxy) {
+      accessTokenObj.proxy = proxy;
+    }
+    console.log(JSON.stringify(accessTokenObj));
+    request.get(accessTokenObj, function (error, response, body) {
+      console.log('code error:' + error);
+      console.log('code response:' + response);
+      console.log('code body:' + body);
+      var bodyObj = querystring.parse(body);
+      var meObj = {
+        url: 'https://graph.facebook.com/me',
+        headers: { Authorization: 'Bearer ' + bodyObj.access_token }/*,  qs: { access_token: body.access_token }*/
+      };
+      if (proxy) {
+        meObj.proxy = proxy;
+      }
+      console.log(JSON.stringify(meObj));
+      request.get(meObj,  function (error, response, body) {
+        console.log('people/me error:' + error);
+        console.log('people/me response:' + response);
+        console.log('people/me body:' + body);
+        var bodyObj = JSON.parse(body);
+        req.session.displayName = bodyObj.name;
         res.redirect('/chat/' + state[1]);
       });
     });
